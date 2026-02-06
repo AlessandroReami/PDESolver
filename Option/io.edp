@@ -1,0 +1,264 @@
+DEFAULT (LOG,"$RUNDIR/log.out")
+DEFAULT (STDOUT,"$RUNDIR/stdout.out")
+
+load "medit";
+	
+int debug = $DEBUG;
+    
+IF WITH_MPI 
+ELSE    
+int mpirank=0; 
+ENDIF 
+
+string[string] colorCodes;  
+colorCodes["white"] = "\\033[97m";
+colorCodes["dim"] = "\\033[2m";
+colorCodes["red"] = "\\033[41m";
+colorCodes["green"] = "\\033[32m";
+colorCodes["blue"] = "\\033[34m";
+colorCodes["yellow"] = "\\033[33m";
+colorCodes["magenta"] = "\\033[35m";
+colorCodes["cyan"] = "\\033[36m";
+colorCodes["black"] = "\\033[30m";
+colorCodes["reset"] = "\\033[0m"; 
+        
+func string colored(string message, string color){  
+    string output = colorCodes[color]+message+"\\033[0m";   
+    return output;
+}
+func int display(string message, string color){
+	string cmd="printf \""+colored(message,color)+"\n\"";
+    if(mpirank==0){
+	exec(cmd);
+	exec(cmd+">> "+"$LOG");
+    }
+}
+	
+macro disp(message) display(message,"green"); //EOM
+
+func int dispMPI(string message){   
+    string cmd = "printf \""+colored(message +" (mpirank="+mpirank+")","yellow") + "\n\""; 
+    exec(cmd);  
+    exec(cmd+">> "+"$LOG"); 
+}
+
+macro dispDebug(message,level,colorCode)		
+    if(debug>=level){	
+       display(message,colorCode);	   	
+	 }	//EOM
+
+
+func int saveToFile(string fileName, real value){
+	dispDebug("Saving "+fileName,2,"blue");
+	ofstream file(fileName);
+	file.precision(16);
+	file << value << endl;
+}
+
+func real readFile(string fileName){
+	dispDebug("Reading "+fileName,2,"blue");
+	ifstream file(fileName);
+	real value;
+	file >> value;	
+	return value;
+}
+
+func int appendDataToFile(string fileName, string line){
+	ofstream file(fileName,append);
+	file << line << endl;
+	dispDebug("Updated "+fileName,2,"blue");
+}
+
+//Function to uniformize numbers in file names 
+//formatNumber(34,4) returns "0034"
+func string formatNumber(real n, int nDigits){
+	if(n==0){
+		string result="";
+		for(int i=0;i<nDigits;i++){
+			result="0"+result;
+		}
+		return result;
+	}
+	int digitsThere=log(n)/log(10.0)+1;
+	string result=n;
+	for(int i=0;i<nDigits-digitsThere;i++){
+		result="0"+result;
+	}
+	return result;
+}
+
+func int saveArray(string fileName, real[int] &value){
+	ofstream file(fileName);
+	file.precision(16);
+	file << value;
+	dispDebug("Saved "+fileName,2,"blue");
+}
+func int saveIntArray(string fileName, int[int] &value){
+	ofstream file(fileName);
+	file.precision(16);
+	file << value;
+	dispDebug("Saved "+fileName,2,"blue");
+}
+func int saveMatrix(string fileName, matrix &value){
+	ofstream file(fileName);
+	file.precision(16);
+	file << value;
+	dispDebug("Saved "+fileName,2,"blue");
+}
+
+func int displayArray(real[int] & a){
+	string message=""; 
+	for(int i=0;i<a.n;i++){
+		message=message+a[i]+" ";
+	}
+	display(message,"green");
+}
+
+func int readSolFile3D(mesh3 & Th, string fileName, real[int] & phi){
+	dispDebug("Reading "+fileName,2,"blue");
+	ifstream f(fileName);
+	string dummy="";
+	while(dummy(0:2)!="Sol"){
+		f>>dummy;
+	}
+	int n;
+	f >> n;
+	if(n!=Th.nv){
+		display("Error : the number of vertices in the file "+fileName+" does not correspond to the mesh in memory","red");
+		exit(1);
+	}
+	f >> dummy;
+	f >> dummy;
+	for(int i=0;i<Th.nv;i++){
+		f>>phi[i];
+	}
+}
+func int readSolFile(mesh & Th, string fileName, real[int] & phi){
+	dispDebug("Reading "+fileName,2,"blue");
+	ifstream f(fileName);
+	string dummy="";
+	while(dummy(0:2)!="Sol"){
+		f>>dummy;
+	}
+	int n;
+	f >> n;
+	if(n!=Th.nv){
+		display("Error : the number of vertices in the file "+fileName+" does not correspond to the mesh in memory","red");
+		exit(1);
+	}
+	f >> dummy;
+	f >> dummy;
+	for(int i=0;i<Th.nv;i++){
+		f>>phi[i];
+	}
+}
+
+func real[int] readArray(string fileName){
+	int n;
+	{
+	ifstream f(fileName);
+    f >> n;
+	}
+	real[int] data(n);
+	{	
+	ifstream f(fileName);
+	f>>data;
+	}
+	dispDebug("Reading "+fileName,2,"blue");
+	return data;
+}
+
+func int[int] readIntArray(string fileName){
+	int n;
+	{
+	ifstream f(fileName);
+    f >> n;
+	}
+	int[int] data(n);
+	{	
+	ifstream f(fileName);
+	f>>data;
+	}
+	dispDebug("Reading "+fileName,2,"blue");
+	return data;
+}
+
+func matrix readMatrix(string fileName){	
+	dispDebug("Reading "+fileName,2,"blue");
+	matrix I;
+	{
+		ifstream f(fileName);
+		f >> I;
+	}
+	return I;
+}
+
+func int savemesh2(mesh & Th,string fileName){
+	dispDebug("Saving "+fileName,2,"blue");
+	savemesh(Th,fileName);
+}
+
+func int savemesh3D(mesh3 Th, string fileName){
+		dispDebug("Saving "+fileName,2,"blue");
+		savemesh(Th,fileName);
+}
+
+func int savesol2(string fileName,mesh & Th,real[int] & phi){
+	dispDebug("Saving "+fileName,2,"blue");
+	fespace Fh(Th,P1);
+	Fh p;
+	p[]=phi;
+	savesol(fileName,Th,p,order=1);
+}
+
+func int savesol3D(string fileName,mesh3 & Th,real[int] & phi){
+	if(mpirank==0)
+	{
+	disp("Saving "+fileName);
+	{
+	ofstream file(fileName);
+	file.precision(16);
+    file << "MeshVersionFormatted 2\n\nDimension 3\n\nSolAtVertices\n";
+    file << Th.nv << endl;
+    file << "1 1\n\n";
+    for(int i=0;i<Th.nv;i++){
+        file << phi[i] << endl;
+    }
+    file << "\nEnd";
+	}
+	}
+}
+
+func mesh readmesh2(string filename){
+	dispDebug("Reading "+filename,2,"blue");
+	mesh Th=readmesh(filename);
+	return Th;
+}
+
+func mesh3 readmesh3D(string filename){
+	dispDebug("Reading "+filename,2,"blue");
+	mesh3 Th=readmesh3(filename);
+	return Th;
+}
+    
+real tclock;    
+macro tic() tclock=clock()//
+macro toc() (clock()-tclock) // 
+
+macro dispVar(var) display(Stringification(var)+"="+var,"blue");  //
+macro dispArray(var)  cout << Stringification(var)+"=" << var << endl; //
+macro dispMatrix(var) cout << Stringification(var)+"=" << var << endl; //
+
+macro exportVar(var) saveToFile("$FFEXPORTDIR/var_"+Stringification(var),var) //
+macro exportArray(a) saveArray("$FFEXPORTDIR/array_"+Stringification(a),a)//
+macro exportIntArray(a) saveIntArray("$FFEXPORTDIR/arrayInt_"+Stringification(a),a)//
+macro exportMesh(a) savemesh2(a,"$FFEXPORTDIR/mesh_"+Stringification(a)+".mesh")//
+macro exportMesh3D(a) savemesh3D(a,"$FFEXPORTDIR/mesh3D_"+Stringification(a)+".mesh")//
+macro exportMatrix(a)  saveMatrix("$FFEXPORTDIR/matrix_"+Stringification(a),a)//
+	
+macro importVar(var) readFile("$FFIMPORTDIR/var_"+var) //
+macro importArray(a) readArray("$FFIMPORTDIR/array_"+a) //
+macro importIntArray(a) readIntArray("$FFIMPORTDIR/array_"+a) //
+macro importMatrix(a) readMatrix("$FFIMPORTDIR/matrix_"+a) //
+macro importMesh(a) readmesh2("$FFIMPORTDIR/mesh_"+a+".mesh") //
+macro importMesh3D(a) readmesh3D("$FFIMPORTDIR/mesh3D_"+a+".mesh") //

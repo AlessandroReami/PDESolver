@@ -1,0 +1,11 @@
+mesh Th = square(10, 10);
+fespace Fh1(Th,P1);
+
+Fh1 u, v;
+
+func f=1;
+solve laplace(u,v) = int2d(Th)(dx(u)*dx(v)+dy(u)*dy(v))
+                    -int2d(Th)(f*v)
+                    +on(1,2,3,4,u=0);
+
+plot(u, wait=true, value=true);

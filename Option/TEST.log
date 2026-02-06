@@ -1,0 +1,24 @@
+-- FreeFem++ v4.14 (Fri Jan 26 13:59:58 CET 2024 - git v4.14-19-g96813b83)
+   file : C:\Users\reami\Desktop\TESI\pythonProject2\Option\TEST.edp
+ Load: lg_fem lg_mesh lg_mesh3 eigenvalue
+    1 : mesh Th = square(10, 10);
+    2 : fespace Fh1(Th,P1);
+    3 :
+    4 : Fh1 u, v;
+    5 :
+    6 : func f=1;
+    7 : solve laplace(u,v) = int2d(Th)(dx(u)*dx(v)+dy(u)*dy(v))
+    8 :                     -int2d(Th)(f*v)
+    9 :                     +on(1,2,3,4,u=0);
+   10 :
+   11 : plot(u, wait=true, value=true);
+   12 :  sizestack + 1024 =1736  ( 712 )
+ 
+  -- Square mesh : nb vertices  =121 ,  nb triangles = 200 ,  nb boundary edges 40
+  -- Solve :
+          min 1.28131e-62  max 0.0730984
+times: compile 0.045s, execution 0.008s,  mpirank:0
+ ######## We forget of deleting   35 Nb pointer,   0Bytes  ,  mpirank 0, memory leak =0
+ CodeAlloc : nb ptr  3852,  size :520272 mpirank: 0
+Ok: Normal End
+ try getConsole C:\Users\reami\Desktop\TESI\pythonProject2\Option\TEST.edp

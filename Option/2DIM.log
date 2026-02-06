@@ -1,0 +1,416 @@
+-- FreeFem++ v4.14 (Fri Jan 26 13:59:58 CET 2024 - git v4.14-19-g96813b83)
+   file : C:\Users\reami\Desktop\TESI\pythonProject2\Option\2DIM.edp
+ Load: lg_fem lg_mesh lg_mesh3 eigenvalue
+    1 : // Parameters
+    2 : int m = 30; int j = 100; real sigx = 0.3; real sigy = 0.3; real rho = 0.3; real r = 0.05; real dt = 0.01;
+    3 :
+    4 : // Input Parameters
+    5 : // string payoff = getARGV("-payoff_type", "PUT_MAX");
+    6 : // if (payoff == "PUT_MAX")
+    7 : //  Vh u = max(K-max(x,y),0.);
+    8 : // else if (payoff == "PUT_MIN")
+    9 : //  Vh u = max(K-(x+y), 0.);
+   10 : // else if (payoff == "PUT_AVERAGE")
+   11 : //  Vh u = max(K-min(x,y),0.);
+   12 : // end if
+   13 :
+   14 : // real K= getARGV("-strike", 40);
+   15 : // real[int] domain(2) = getARGV("-domain");
+   16 : // int L = domain[0];
+   17 : // int LL = domain[1];
+   18 : // string exercise = getARGV("-exercise_type");
+   19 :
+   20 : real K= 40;
+   21 : int L = 100;
+   22 : int LL = 100;
+   23 :
+   24 :
+   25 :
+   26 :
+   27 : real rhohat=2*rho/(1+rho^2);
+   28 :
+   29 : // Mesh
+   30 : mesh th = square(m, m, [L*x, LL*y]);
+   31 :
+   32 : // Fespace
+   33 : fespace Vh(th, P1);
+   34 : Vh u = max(K-max(x,y),0.);
+   35 : Vh xveloc, yveloc, v, uold;
+   36 :
+   37 : // Time loop
+   38 : for (int n = 0; n*dt <= 1.0; n++){
+   39 :     // Mesh adaptation
+   40 :     if (j > 20){
+   41 :         th = adaptmesh(th, u, verbosity=1, abserror=1, nbjacoby=2,
+   42 :         err=0.001, nbvx=5000, omega=1.8, ratio=1.8, nbsmooth=3,
+   43 :         splitpbedge=1, maxsubdiv=5, rescaling=1);
+   44 :         j = 0;
+   45 :         xveloc = -x*r + x*sigx^2 + x*rhohat*sigx*sigy/2;
+   46 :         yveloc = -y*r + y*sigy^2 + y*rhohat*sigx*sigy/2;
+   47 :         u = u;
+   48 :     }
+   49 :
+   50 :     // Update
+   51 :     uold = u;
+   52 :
+   53 :     // Solve
+   54 :     solve eq1(u, v, init=j, solver=LU)
+   55 :         = int2d(th)(
+   56 :               u*v*(r+1/dt)
+   57 :             + dx(u)*dx(v)*(x*sigx)^2/2
+   58 :             + dy(u)*dy(v)*(y*sigy)^2/2
+   59 :             + (dy(u)*dx(v) + dx(u)*dy(v))*rhohat*sigx*sigy*x*y/2
+   60 :         )
+   61 :         - int2d(th)(
+   62 :               v*convect([xveloc, yveloc], dt, uold)/dt
+   63 :         )
+   64 :         + on(2, 3, u=0)
+   65 :         ;
+   66 :
+   67 :     // Update
+   68 :     j = j+1;
+   69 : };
+   70 :
+   71 : // Plot
+   72 : plot(u, wait=true, value=true);
+   73 :  sizestack + 1024 =7904  ( 6880 )
+ 
+  -- Square mesh : nb vertices  =961 ,  nb triangles = 1800 ,  nb boundary edges 120
+  number of required edges : 0
+  -- adaptmesh statistics:  Nb triangles 1000 , h  min 0.469801 , h max 34.8023
+     area =  10000 , M area = 446.366 , M area/( |Khat| nt) 1.03084
+     infiny-regularity:  min 0.406671  max 2.17644
+     anisomax  51.612, beta max = 1.28758 min  0.792498
+  --  mesh:  Nb of Triangles =   1000, Nb of Vertices 541
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -1.5995e-06  max 39.9718
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -8.07195e-06  max 39.9434
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -3.06797e-05  max 39.9151
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -7.90465e-05  max 39.887
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.000157477  max 39.8594
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.000259749  max 39.8324
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.000368141  max 39.8058
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.00045556  max 39.7798
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.000489194  max 39.7542
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.00043431  max 39.7291
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.000257411  max 39.7043
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.000124446  max 39.6797
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.000171951  max 39.6555
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.000245354  max 39.6314
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.000328141  max 39.6076
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.000416892  max 39.584
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.00050746  max 39.5605
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.000595173  max 39.5371
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.00067502  max 39.5139
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.000741832  max 39.4908
+  SkyLineMatrix: size pL/pU: 541 12681 12681 moy=23.4399
+  -- Solve :
+          min -0.00079042  max 39.4679
+  number of required edges : 0
+  -- adaptmesh statistics:  Nb triangles 1408 , h  min 0.260002 , h max 34.3197
+     area =  10000 , M area = 645.221 , M area/( |Khat| nt) 1.05829
+     infiny-regularity:  min 0.397206  max 2.21862
+     anisomax  46.8017, beta max = 1.29923 min  0.742785
+  --  mesh:  Nb of Triangles =   1408, Nb of Vertices 750
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000332996  max 39.4468
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000396713  max 39.4258
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000461193  max 39.405
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000518887  max 39.3844
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.00056591  max 39.364
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.00059953  max 39.3437
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000617414  max 39.3236
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000617397  max 39.3036
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000597419  max 39.2837
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000555526  max 39.2639
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000489879  max 39.2442
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000398765  max 39.2246
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000280612  max 39.205
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000215135  max 39.1855
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.00024812  max 39.166
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000282288  max 39.1466
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000317342  max 39.1272
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000352966  max 39.1079
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000388826  max 39.0886
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000424574  max 39.0693
+  SkyLineMatrix: size pL/pU: 750 19403 19403 moy=25.8707
+  -- Solve :
+          min -0.000459856  max 39.05
+  number of required edges : 0
+  -- adaptmesh statistics:  Nb triangles 1703 , h  min 0.316217 , h max 34.1033
+     area =  10000 , M area = 743.466 , M area/( |Khat| nt) 1.0082
+     infiny-regularity:  min 0.426119  max 2.33552
+     anisomax  45.4208, beta max = 1.30427 min  0.736785
+  --  mesh:  Nb of Triangles =   1703, Nb of Vertices 898
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000503435  max 39.0304
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000587568  max 39.0111
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.00065777  max 38.992
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000716588  max 38.9731
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000765635  max 38.9542
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000806081  max 38.9354
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000838846  max 38.9167
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000864665  max 38.8979
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.00088413  max 38.8792
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000897704  max 38.8605
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000905742  max 38.8419
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.0009085  max 38.8232
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000906154  max 38.8045
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000898809  max 38.7858
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000886514  max 38.7672
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000869269  max 38.7485
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000847038  max 38.7299
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000819751  max 38.7112
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000787318  max 38.6926
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.00074963  max 38.6739
+  SkyLineMatrix: size pL/pU: 898 25026 25026 moy=27.8686
+  -- Solve :
+          min -0.000706567  max 38.6553
+  number of required edges : 0
+  -- adaptmesh statistics:  Nb triangles 1756 , h  min 0.316933 , h max 34.5143
+     area =  10000 , M area = 809.999 , M area/( |Khat| nt) 1.06527
+     infiny-regularity:  min 0.383163  max 2.3292
+     anisomax  38.9025, beta max = 1.24497 min  0.702954
+  --  mesh:  Nb of Triangles =   1756, Nb of Vertices 926
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -0.000638644  max 38.6365
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -0.000577777  max 38.6178
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -0.000508878  max 38.599
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -0.000432816  max 38.5803
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -0.000350219  max 38.5616
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -0.000261473  max 38.5429
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -0.000166787  max 38.5242
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -6.62455e-05  max 38.5055
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -1.08886e-29  max 38.4868
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -1.20354e-29  max 38.4681
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -1.32674e-29  max 38.4495
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -1.45507e-29  max 38.4308
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -1.58858e-29  max 38.4121
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -1.72732e-29  max 38.3935
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -1.87134e-29  max 38.3749
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -2.02064e-29  max 38.3563
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -2.17525e-29  max 38.3376
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -2.33516e-29  max 38.319
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -2.50039e-29  max 38.3004
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -2.67091e-29  max 38.2818
+  SkyLineMatrix: size pL/pU: 926 25535 25535 moy=27.5756
+  -- Solve :
+          min -2.8467e-29  max 38.2633
+  number of required edges : 0
+  -- adaptmesh statistics:  Nb triangles 1884 , h  min 0.322508 , h max 33.6101
+     area =  10000 , M area = 865.978 , M area/( |Khat| nt) 1.06151
+     infiny-regularity:  min 0.382504  max 2.25845
+     anisomax  39.9207, beta max = 1.39985 min  0.712069
+  --  mesh:  Nb of Triangles =   1884, Nb of Vertices 992
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -2.43489e-29  max 38.2443
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -2.57654e-29  max 38.2253
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -2.72805e-29  max 38.2064
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -2.88734e-29  max 38.1875
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -3.05301e-29  max 38.1686
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -3.22416e-29  max 38.1498
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -3.40012e-29  max 38.131
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -3.58043e-29  max 38.1122
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -3.76472e-29  max 38.0935
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -3.95273e-29  max 38.0748
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -4.14425e-29  max 38.056
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -4.33912e-29  max 38.0374
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -4.53719e-29  max 38.0187
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -4.73835e-29  max 38
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -4.94251e-29  max 37.9813
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -5.14957e-29  max 37.9627
+  SkyLineMatrix: size pL/pU: 992 27074 27074 moy=27.2923
+  -- Solve :
+          min -5.35947e-29  max 37.9441
+times: compile 0.162s, execution 1.61s,  mpirank:0
+ ######## We forget of deleting   413573 Nb pointer,   0Bytes  ,  mpirank 0, memory leak =0
+ CodeAlloc : nb ptr  4131,  size :531328 mpirank: 0
+Ok: Normal End
+ try getConsole C:\Users\reami\Desktop\TESI\pythonProject2\Option\2DIM.edp
